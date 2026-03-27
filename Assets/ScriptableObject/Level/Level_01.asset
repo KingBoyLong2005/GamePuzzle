@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a68db4d400f2e594aac82edb6d5812a0, type: 3}
+  m_Name: Level_01
+  m_EditorClassIdentifier: Assembly-CSharp::LevelDataSO
+  rows: 4
+  cols: 4
+  colorMode: 0
+  rowCounts: 02000000030000000200000000000000
+  rowColors: []
+  colCounts: 01000000030000000200000001000000
+  colColors: []
+  pieces:
+  - pieceName: L
+    color: {r: 0.32600206, g: 0.34667176, b: 0.81886786, a: 0}
+    cells:
+    - {x: 0, y: 0}
+    - {x: 0, y: 1}
+    - {x: 1, y: 0}
+  - pieceName: T
+    color: {r: 0.86415094, g: 0.54263353, b: 0.14185114, a: 0}
+    cells:
+    - {x: 0, y: 0}
+    - {x: 0, y: 1}
+    - {x: 1, y: 0}
+  - pieceName: single
+    color: {r: 0.78867924, g: 0.07589176, b: 0.07589176, a: 0}
+    cells:
+    - {x: 0, y: 0}
+  solution: 00010100010101000001000100000000
+  solutionColorIdx: 
+  displayName: Level 1
+  thumbnail: {fileID: 0}
