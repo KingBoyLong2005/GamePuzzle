@@ -34,16 +34,19 @@ public class GameController : MonoBehaviour
         public Vector2Int[] currentCells;
         public int         rotState;
         public Color       color;
+        public bool        usePrefab;          // true = sprite từ prefab, false = tạo bằng code
         public List<SpriteRenderer> visuals   = new();
         public List<BoxCollider2D>  colliders = new();
         public bool  isPlaced;
         public int   placedRow, placedCol;
         public Vector3 homePos;
+        public int   pressedCellIdx = 0;      // ô đang bấm vào → pivot khi xoay
     }
     List<PieceInstance> pieces = new();
 
     PieceInstance dragging;
     Vector3       dragOffset;
+    Vector3       pressWorld;      // vị trí world lúc bấm xuống
     float         dragStartTime;
     bool          isDragging;
 
@@ -125,7 +128,7 @@ public class GameController : MonoBehaviour
         BuildPieces();
         RefreshClues();
 
-        int idx = GameManager.Instance ? GameManager.Instance.GetLevelIndex(levelData) : 0;
+        int idx = GameManagerTest.Instance ? GameManagerTest.Instance.GetLevelIndex(levelData) : 0;
         levelLabel.text = $"Level {idx + 1}";
         winPanel.SetActive(false);
         hintActive = false;
@@ -423,6 +426,7 @@ public class GameController : MonoBehaviour
         {
             shape        = shape,
             color        = shape.color,
+            usePrefab    = shape.prefab != null,
             rotState     = 0,
             isPlaced     = false,
             placedRow    = -1,
@@ -431,10 +435,22 @@ public class GameController : MonoBehaviour
             homePos      = worldPos
         };
 
-        pi.root = new GameObject($"Piece_{shape.pieceName}");
-        pi.root.transform.position = worldPos;
+        if (shape.prefab != null)
+        {
+            // ── Dùng Prefab (sprite/màu đã có sẵn) ──────────────────────────
+            pi.root = UnityEngine.Object.Instantiate(shape.prefab, worldPos, Quaternion.identity);
+            pi.root.name = $"Piece_{shape.pieceName}";
+        }
+        else
+        {
+            // ── Tạo bằng code (fallback) ─────────────────────────────────────
+            pi.root = new GameObject($"Piece_{shape.pieceName}");
+            pi.root.transform.position = worldPos;
+        }
 
-        var rb = pi.root.AddComponent<Rigidbody2D>();
+        // Đảm bảo có Rigidbody2D kinematic (cần cho OnMouse* events)
+        var rb = pi.root.GetComponent<Rigidbody2D>();
+        if (rb == null) rb = pi.root.AddComponent<Rigidbody2D>();
         rb.bodyType     = RigidbodyType2D.Kinematic;
         rb.gravityScale = 0;
 
@@ -444,6 +460,7 @@ public class GameController : MonoBehaviour
 
     void RebuildPieceVisuals(PieceInstance pi)
     {
+        // Xoá visuals cũ (chỉ xoá GO con tạo bằng code, không xoá GO của prefab)
         foreach (var v in pi.visuals)   if (v) Destroy(v.gameObject);
         pi.visuals.Clear();
         foreach (var c in pi.colliders) if (c) Destroy(c);
@@ -451,32 +468,43 @@ public class GameController : MonoBehaviour
 
         foreach (var offset in pi.currentCells)
         {
-            // ✅ FIX: +offset.x = right, +offset.y = DOWN in grid → -Y in world
-            var vis = new GameObject("V");
-            vis.transform.SetParent(pi.root.transform, false);
-            vis.transform.localPosition = new Vector3(offset.x * Step, -offset.y * Step, 0);
-            vis.transform.localScale    = Vector3.one * CELL * 0.92f;
+            if (!pi.usePrefab)
+            {
+                // ── Code mode: tạo SpriteRenderer con ───────────────────────
+                var vis = new GameObject("V");
+                vis.transform.SetParent(pi.root.transform, false);
+                vis.transform.localPosition = new Vector3(offset.x * Step, -offset.y * Step, 0);
+                vis.transform.localScale    = Vector3.one * CELL * 0.92f;
 
-            var sr = vis.AddComponent<SpriteRenderer>();
-            sr.sprite       = MakeRoundedSprite();
-            sr.color        = pi.color;
-            sr.sortingOrder = 4;
-            pi.visuals.Add(sr);
+                var sr = vis.AddComponent<SpriteRenderer>();
+                sr.sprite       = MakeRoundedSprite();
+                sr.color        = pi.color;
+                sr.sortingOrder = 4;
+                pi.visuals.Add(sr);
 
-            var inner = new GameObject("I");
-            inner.transform.SetParent(vis.transform, false);
-            inner.transform.localPosition = new Vector3(0, 0, -0.01f);
-            inner.transform.localScale    = Vector3.one * 0.7f;
-            var isr = inner.AddComponent<SpriteRenderer>();
-            isr.sprite       = MakeRoundedSprite();
-            isr.color        = new Color(1, 1, 1, 0.15f);
-            isr.sortingOrder = 5;
+                var inner = new GameObject("I");
+                inner.transform.SetParent(vis.transform, false);
+                inner.transform.localPosition = new Vector3(0, 0, -0.01f);
+                inner.transform.localScale    = Vector3.one * 0.7f;
+                var isr = inner.AddComponent<SpriteRenderer>();
+                isr.sprite       = MakeRoundedSprite();
+                isr.color        = new Color(1, 1, 1, 0.15f);
+                isr.sortingOrder = 5;
+            }
 
-            // ✅ FIX: collider offset mirrors visual offset exactly
+            // Collider luôn tạo lại (cả code mode lẫn prefab mode)
             var box    = pi.root.AddComponent<BoxCollider2D>();
             box.offset = new Vector2(offset.x * Step, -offset.y * Step);
             box.size   = new Vector2(CELL * 0.92f, CELL * 0.92f);
             pi.colliders.Add(box);
+        }
+
+        // Prefab mode: thu thập SpriteRenderer từ prefab để dùng preview/sort
+        if (pi.usePrefab)
+        {
+            pi.visuals.Clear();
+            foreach (var sr in pi.root.GetComponentsInChildren<SpriteRenderer>())
+                pi.visuals.Add(sr);
         }
     }
 
@@ -503,10 +531,12 @@ public class GameController : MonoBehaviour
             if (hit != null)
             {
                 if (hit.isPlaced) UnplacePiece(hit);
-                dragging      = hit;
-                dragOffset    = hit.root.transform.position - world;
-                dragStartTime = Time.time;
-                isDragging    = false;
+                dragging              = hit;
+                dragOffset            = hit.root.transform.position - world;
+                pressWorld            = world;
+                dragStartTime         = Time.time;
+                isDragging            = false;
+                hit.pressedCellIdx    = FindClosestCell(hit, world);  // ô đang bấm
                 SetPieceSortOrder(hit, 10);
             }
         }
@@ -534,8 +564,8 @@ public class GameController : MonoBehaviour
 
             if (!isDragging && held_t < 0.25f)
             {
-                // Tap = rotate
-                RotatePiece(dragging);
+                // Tap = xoay quanh ô đang bấm
+                RotatePiece(dragging, dragging.pressedCellIdx);
             }
             else if (isDragging)
             {
@@ -561,7 +591,11 @@ public class GameController : MonoBehaviour
         if (rightClick)
         {
             var hit = PickPiece(world);
-            if (hit != null && !hit.isPlaced) RotatePiece(hit);
+            if (hit != null && !hit.isPlaced)
+            {
+                int pivotIdx = FindClosestCell(hit, world);
+                RotatePiece(hit, pivotIdx);
+            }
         }
     }
 
@@ -595,7 +629,9 @@ public class GameController : MonoBehaviour
     void ClearDropPreview()
     {
         if (dragging == null) return;
-        foreach (var sr in dragging.visuals) sr.color = dragging.color;
+        // Prefab: reset về trắng (sprite tự có màu gốc). Code: dùng pieceColor.
+        Color resetColor = dragging.usePrefab ? Color.white : dragging.color;
+        foreach (var sr in dragging.visuals) sr.color = resetColor;
     }
 
     void SetPieceSortOrder(PieceInstance pi, int order)
@@ -607,9 +643,14 @@ public class GameController : MonoBehaviour
     //  ROTATION
     // ═══════════════════════════════════════════════════════════
 
-    void RotatePiece(PieceInstance pi)
+    void RotatePiece(PieceInstance pi, int pivotCellIdx = -1)
     {
         if (pi.isPlaced) return;
+
+        // Offset của ô pivot TRƯỚC khi xoay
+        Vector2Int pivotBefore = (pivotCellIdx >= 0 && pivotCellIdx < pi.currentCells.Length)
+            ? pi.currentCells[pivotCellIdx] : Vector2Int.zero;
+
         pi.rotState = (pi.rotState + 1) % 4;
         pi.currentCells = new Vector2Int[pi.shape.cells.Length];
         for (int i = 0; i < pi.shape.cells.Length; i++)
@@ -619,7 +660,36 @@ public class GameController : MonoBehaviour
                 c = new Vector2Int(c.y, -c.x);  // 90° CW in grid space
             pi.currentCells[i] = c;
         }
+
+        // Offset của ô pivot SAU khi xoay
+        Vector2Int pivotAfter = (pivotCellIdx >= 0 && pivotCellIdx < pi.currentCells.Length)
+            ? pi.currentCells[pivotCellIdx] : Vector2Int.zero;
+
+        // Dịch root để ô pivot giữ nguyên vị trí world
+        Vector3 delta = new Vector3(
+            (pivotBefore.x - pivotAfter.x) * Step,
+            -(pivotBefore.y - pivotAfter.y) * Step,  // -Y vì grid Y xuống = world -Y
+            0);
+        pi.root.transform.position += delta;
+        pi.homePos                 += delta;
+
         RebuildPieceVisuals(pi);
+    }
+
+    // Tìm index của ô piece gần vị trí world nhất
+    int FindClosestCell(PieceInstance pi, Vector3 worldPos)
+    {
+        int   best = 0;
+        float bestDist = float.MaxValue;
+        for (int i = 0; i < pi.currentCells.Length; i++)
+        {
+            var off = pi.currentCells[i];
+            Vector3 cellW = pi.root.transform.position +
+                new Vector3(off.x * Step, -off.y * Step, 0);
+            float dist = Vector3.Distance(worldPos, cellW);
+            if (dist < bestDist) { bestDist = dist; best = i; }
+        }
+        return best;
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -713,7 +783,7 @@ public class GameController : MonoBehaviour
         winPanel.SetActive(true);
 
         // Lưu progress qua GameManager + SaveManager
-        if (GameManager.Instance) GameManager.Instance.OnLevelComplete(currentLevelData);
+        if (GameManagerTest.Instance) GameManagerTest.Instance.OnLevelComplete(currentLevelData);
     }
 
     IEnumerator FlashColor(SpriteRenderer sr, Color to, float dur)
@@ -811,7 +881,7 @@ public class GameController : MonoBehaviour
 
                 MakeButton(canvasGO, "< Menu", new Vector2(0, -360),
             new Vector2(160, 46), new Color(0.25f, 0.28f, 0.40f),
-            () => { if (GameManager.Instance) GameManager.Instance.BackToLevelSelect(); });
+            () => { if (GameManagerTest.Instance) GameManagerTest.Instance.BackToLevelSelect(); });
 
         hintBtn = MakeButton(canvasGO, "Hint  (Ad)", new Vector2(-180, 70),
             new Vector2(110, 60), new Color(0.15f, 0.55f, 0.95f), RequestHint);
@@ -904,13 +974,13 @@ public class GameController : MonoBehaviour
     void NextLevel()
     {
         winPanel.SetActive(false);
-        if (GameManager.Instance)
+        if (GameManagerTest.Instance)
         {
-            var next = GameManager.Instance.GetNextLevel(currentLevelData);
+            var next = GameManagerTest.Instance.GetNextLevel(currentLevelData);
             if (next != null)
-                GameManager.Instance.StartLevel(next);
+                GameManagerTest.Instance.StartLevel(next);
             else
-                GameManager.Instance.BackToLevelSelect();
+                GameManagerTest.Instance.BackToLevelSelect();
         }
     }
 

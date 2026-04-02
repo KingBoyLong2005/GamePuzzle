@@ -50,4 +50,7 @@ public class PieceShapeData
 
     [Tooltip("Các offset (col, row) tương đối từ pivot. +X=phải, +Y=xuống")]
     public Vector2Int[] cells;
+
+    [Tooltip("Prefab piece có sẵn sprite/màu. Nếu để trống → tự tạo bằng code dùng Color ở trên.")]
+    public GameObject  prefab;
 }
