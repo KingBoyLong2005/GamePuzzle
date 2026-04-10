@@ -1,14 +1,8 @@
-using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-// ────────────────────────────────────────────────────────────
-//  SaveManager  —  Singleton, tồn tại suốt game
-//
-//  Lưu trạng thái hoàn thành từng level vào PlayerPrefs dạng JSON.
-//  Key: "PuzzleSave"
-// ────────────────────────────────────────────────────────────
-
+// Lưu/đọc tiến trình qua PlayerPrefs (JSON).
+// Singleton tồn tại suốt game.
 public class SaveManager : MonoBehaviour
 {
     public static SaveManager Instance { get; private set; }
@@ -18,61 +12,54 @@ public class SaveManager : MonoBehaviour
     [System.Serializable]
     class SaveData
     {
-        public List<string> completedLevels = new();  // lưu tên asset (name) của LevelDataSO
+        // Lưu tên asset (ScriptableObject.name) của level đã hoàn thành
+        public List<string> completedLevelNames = new();
     }
 
-    SaveData data;
+    SaveData saveData;
 
     void Awake()
     {
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
         DontDestroyOnLoad(gameObject);
-        Load();
+        Debug.Log("[SaveManager] Save path: " + Application.persistentDataPath);
+        LoadFromDisk();
     }
 
     // ── Public API ────────────────────────────────────────────
 
-    /// <summary>Đánh dấu level đã hoàn thành và lưu.</summary>
     public void MarkCompleted(LevelDataSO level)
     {
-        string key = level.name;
-        if (!data.completedLevels.Contains(key))
-        {
-            data.completedLevels.Add(key);
-            Save();
-        }
+        if (saveData.completedLevelNames.Contains(level.name)) return;
+        saveData.completedLevelNames.Add(level.name);
+        SaveToDisk();
     }
 
-    /// <summary>Kiểm tra level đã hoàn thành chưa.</summary>
     public bool IsCompleted(LevelDataSO level) =>
-        data.completedLevels.Contains(level.name);
+        saveData.completedLevelNames.Contains(level.name);
 
-    /// <summary>Xoá toàn bộ save (dùng cho debug).</summary>
+    /// Xoá toàn bộ save (dùng cho debug).
     public void ResetAll()
     {
-        data = new SaveData();
-        Save();
-        Debug.Log("[SaveManager] Save đã được reset.");
+        saveData = new SaveData();
+        SaveToDisk();
+        Debug.Log("[SaveManager] Đã reset save.");
     }
 
-    // ── Internal ─────────────────────────────────────────────
+    // ── Internal ──────────────────────────────────────────────
 
-    void Save()
+    void SaveToDisk()
     {
-        string json = JsonUtility.ToJson(data);
-        PlayerPrefs.SetString(SAVE_KEY, json);
+        PlayerPrefs.SetString(SAVE_KEY, JsonUtility.ToJson(saveData));
         PlayerPrefs.Save();
     }
 
-    void Load()
+    void LoadFromDisk()
     {
         string json = PlayerPrefs.GetString(SAVE_KEY, "");
-        data = string.IsNullOrEmpty(json)
+        saveData = string.IsNullOrEmpty(json)
             ? new SaveData()
-            : JsonUtility.FromJson<SaveData>(json);
-
-        if (data == null) data = new SaveData();
-        Debug.Log($"[SaveManager] Loaded. Completed: {data.completedLevels.Count} levels.");
+            : JsonUtility.FromJson<SaveData>(json) ?? new SaveData();
     }
 }

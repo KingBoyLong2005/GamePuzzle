@@ -21,22 +21,21 @@ MonoBehaviour:
   colColors: []
   pieces:
   - pieceName: L
-    color: {r: 0.32600206, g: 0.34667176, b: 0.81886786, a: 0}
-    cells:
-    - {x: 0, y: 0}
-    - {x: 0, y: 1}
-    - {x: 1, y: 0}
+    color: {r: 1, g: 1, b: 1, a: 1}
+    shapeRows: 2
+    shapeCols: 2
+    shapeCells: 01010100
   - pieceName: T
-    color: {r: 0.86415094, g: 0.54263353, b: 0.14185114, a: 0}
-    cells:
-    - {x: 0, y: 0}
-    - {x: 0, y: 1}
-    - {x: 1, y: 0}
+    color: {r: 1, g: 1, b: 1, a: 1}
+    shapeRows: 3
+    shapeCols: 2
+    shapeCells: 010001010100
   - pieceName: single
-    color: {r: 0.78867924, g: 0.07589176, b: 0.07589176, a: 0}
-    cells:
-    - {x: 0, y: 0}
+    color: {r: 1, g: 1, b: 1, a: 1}
+    shapeRows: 1
+    shapeCols: 1
+    shapeCells: 01
   solution: 00010100010101000001000100000000
-  solutionColorIdx: 
+  solutionColors: 
   displayName: Level 1
   thumbnail: {fileID: 0}

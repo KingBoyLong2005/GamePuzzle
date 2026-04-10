@@ -1,56 +1,77 @@
+using System.Collections.Generic;
 using UnityEngine;
 
-// ────────────────────────────────────────────────────────────
-//  Tạo asset: chuột phải trong Project → Create → Puzzle/Level Data
-// ────────────────────────────────────────────────────────────
-
+// Tạo asset: chuột phải → Create → Puzzle/Level Data
 [CreateAssetMenu(menuName = "Puzzle/Level Data", fileName = "Level_01")]
 public class LevelDataSO : ScriptableObject
 {
-    [Header("Board")]
+    [Header("Kích thước bảng")]
     public int rows = 4;
     public int cols = 4;
 
-    [Header("Color Mode (level khó)")]
-    public bool colorMode = false;
+    [Header("Chế độ màu (level khó hơn)")]
+    public bool colorMode;
 
-    [Header("Row Clues")]
+    [Header("Gợi ý hàng — số ô cần điền mỗi hàng")]
     public int[]   rowCounts;
     public Color[] rowColors;   // chỉ dùng khi colorMode = true
 
-    [Header("Column Clues")]
+    [Header("Gợi ý cột — số ô cần điền mỗi cột")]
     public int[]   colCounts;
     public Color[] colColors;   // chỉ dùng khi colorMode = true
 
-    [Header("Pieces")]
-    public PieceShapeData[] pieces;
+    [Header("Các mảnh cần đặt")]
+    public PieceData[] pieces;
 
-    [Header("Solution (dùng cho Hint overlay)")]
-    [Tooltip("Mảng bool row-major, length = rows * cols")]
+    [Header("Lời giải (dùng cho tính năng Hint)")]
+    [Tooltip("Mảng bool row-major, length = rows × cols")]
     public bool[] solution;
+    [Tooltip("Màu ô lời giải: 1=Đỏ 2=Lam 3=Lục 4=Vàng 5=Tím. Chỉ dùng khi colorMode=true")]
+    public int[]  solutionColors;
 
-    [Tooltip("Mảng màu index tương ứng solution (1=Red,2=Blue,3=Green,4=Yellow,5=Purple). Chỉ dùng khi colorMode=true")]
-    public int[]  solutionColorIdx;
-
-    [Header("Display")]
-    [Tooltip("Tên hiển thị trên màn hình chọn level")]
+    [Header("Hiển thị")]
     public string displayName = "Level";
-    public Sprite thumbnail;        // tuỳ chọn, hiển thị preview
+    public Sprite thumbnail;
 }
 
 // ────────────────────────────────────────────────────────────
-//  Piece Shape — định nghĩa hình dạng một mảnh
+//  PieceData  —  hình dạng và màu của một mảnh ghép
+//
+//  Hình dạng lưu dưới dạng LƯỚI 2D:
+//    shapeRows × shapeCols ô, mỗi ô bool (tick = thuộc mảnh)
+//    Ví dụ: mảnh L 3×2
+//      shapeCells = [ true, false,
+//                     true, false,
+//                     true, true  ]
 // ────────────────────────────────────────────────────────────
-
 [System.Serializable]
-public class PieceShapeData
+public class PieceData
 {
-    public string      pieceName = "Piece";
-    public Color       color     = Color.white;
+    public string pieceName = "Piece";
+    public Color  color     = Color.white;
 
-    [Tooltip("Các offset (col, row) tương đối từ pivot. +X=phải, +Y=xuống")]
-    public Vector2Int[] cells;
+    [Header("Hình dạng (lưới 2D — tick ô thuộc mảnh)")]
+    public int    shapeRows = 3;
+    public int    shapeCols = 3;
+    [Tooltip("Mảng bool row-major, length = shapeRows × shapeCols")]
+    public bool[] shapeCells;
 
-    [Tooltip("Prefab piece có sẵn sprite/màu. Nếu để trống → tự tạo bằng code dùng Color ở trên.")]
-    public GameObject  prefab;
+    /// <summary>
+    /// Trả về danh sách offset (col, row) của các ô được tick.
+    /// Gốc (0,0) = góc trên-trái. +col = phải, +row = xuống.
+    /// </summary>
+    public Vector2Int[] GetCellOffsets()
+    {
+        var offsets = new List<Vector2Int>();
+        if (shapeCells == null) return offsets.ToArray();
+
+        for (int r = 0; r < shapeRows; r++)
+        for (int c = 0; c < shapeCols; c++)
+        {
+            int idx = r * shapeCols + c;
+            if (idx < shapeCells.Length && shapeCells[idx])
+                offsets.Add(new Vector2Int(c, r));
+        }
+        return offsets.ToArray();
+    }
 }

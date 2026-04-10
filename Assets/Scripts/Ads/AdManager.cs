@@ -71,8 +71,8 @@ public class AdManager : MonoBehaviour
     {
         Debug.LogWarning($"[AdManager] Display failed: {err.ErrorCode}");
         pendingCallback = null;
-        GameController uim = FindFirstObjectByType<GameController>();
-        uim?.ShowToast("Lỗi hiển thị quảng cáo. Thử lại!");
+        // GameController uim = FindFirstObjectByType<GameController>();
+        // uim?.ShowToast("Lỗi hiển thị quảng cáo. Thử lại!");
         Reload();
     }
 
@@ -92,7 +92,7 @@ public class AdManager : MonoBehaviour
         Log("Ad closed.");
         if (!rewardGranted)
         {
-            FindFirstObjectByType<GameController>()?.ShowToast("Xem hết quảng cáo để nhận gợi ý!");
+            // FindFirstObjectByType<GameController>()?.ShowToast("Xem hết quảng cáo để nhận gợi ý!");
             pendingCallback = null;
         }
         rewardGranted = false;
@@ -115,7 +115,7 @@ public class AdManager : MonoBehaviour
 
         if (!sdkInitialized)
         {
-            FindFirstObjectByType<GameController>()?.ShowToast("SDK chưa sẵn sàng. Thử lại!");
+            // FindFirstObjectByType<GameController>()?.ShowToast("SDK chưa sẵn sàng. Thử lại!");
             pendingCallback = null;
             return;
         }
@@ -124,7 +124,7 @@ public class AdManager : MonoBehaviour
             rewardedAd.ShowAd();
         else
         {
-            FindFirstObjectByType<GameController>()?.ShowToast("Đang tải quảng cáo... Thử lại sau!");
+            // FindFirstObjectByType<GameController>()?.ShowToast("Đang tải quảng cáo... Thử lại sau!");
             pendingCallback = null;
             Reload();
         }
