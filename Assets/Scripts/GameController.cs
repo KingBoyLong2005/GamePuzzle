@@ -4,19 +4,6 @@ using UnityEngine;
 
 // ────────────────────────────────────────────────────────────
 //  GameController  —  điều phối gameplay
-//
-//  Trách nhiệm:
-//    - Load / unload level (gọi các manager)
-//    - Lắng nghe event từ PieceManager (đặt/gỡ mảnh)
-//    - Kiểm tra thắng và chạy win sequence
-//    - Xử lý Hint
-//    - Điều khiển camera
-//
-//  KHÔNG chứa logic bảng, mảnh, hay UI trực tiếp.
-//  Tất cả giao tiếp qua các manager và UIGameplay.
-//
-//  Gán script này lên Gameplay Root GO trong scene.
-//  Kéo các child manager vào Inspector.
 // ────────────────────────────────────────────────────────────
 public class GameController : MonoBehaviour
 {
@@ -25,10 +12,7 @@ public class GameController : MonoBehaviour
     [SerializeField] ClueManager  clues;
     [SerializeField] PieceManager pieces;
     [SerializeField] UIGameplay   ui;
-
-    [Header("Prefab overlay hint (SpriteRenderer vuông)")]
-    [SerializeField] GameObject hintCellPrefab;
-
+    [SerializeField] HandleInput input;
     LevelDataSO currentLevel;
 
     // ── Load / Unload ─────────────────────────────────────────
@@ -42,25 +26,26 @@ public class GameController : MonoBehaviour
         board.Build(level);
         clues.Build(level, board);
         pieces.SpawnPieces(level);
+        input = FindFirstObjectByType<HandleInput>();
 
-        // Đăng ký event mỗi lần load (Clear() trước đó đã huỷ subcription cũ)
-        pieces.OnPiecePlaced   += HandlePiecePlaced;
-        pieces.OnPieceUnplaced += HandlePieceUnplaced;
+        input.OnPiecePlaced   += HandlePiecePlaced;
+        input.OnPieceUnplaced += HandlePieceUnplaced;
 
         int levelNumber = GameManager.Instance
             ? GameManager.Instance.GetLevelIndex(level) + 1 : 1;
         ui.Setup(levelNumber);
+        FindFirstObjectByType<UIGameplay>().ShowUIGame();
     }
 
     public void HideGame()
     {
-        // Huỷ đăng ký trước khi clear để tránh event rò
-        pieces.OnPiecePlaced   -= HandlePiecePlaced;
-        pieces.OnPieceUnplaced -= HandlePieceUnplaced;
+        input.OnPiecePlaced   -= HandlePiecePlaced;
+        input.OnPieceUnplaced -= HandlePieceUnplaced;
 
         board.Clear();
         clues.Clear();
         pieces.Clear();
+        ClearHint();
         gameObject.SetActive(false);
     }
 
@@ -80,6 +65,7 @@ public class GameController : MonoBehaviour
     public void RestartLevel()
     {
         StopAllCoroutines();
+        ClearHint();
         LoadLevel(currentLevel);
     }
 
@@ -92,10 +78,8 @@ public class GameController : MonoBehaviour
 
     public void RequestHint()
     {
-        // TODO: thay dòng dưới bằng AdManager.Instance.ShowRewardedAd(ShowHint)
-        //       khi tích hợp quảng cáo
+        // TODO: thay bằng AdManager.Instance.ShowRewardedAd(ShowHint)
         ShowHint();
-        ui.ShowToast("Gợi ý hiện trong 6 giây!");
     }
 
     // ── Win sequence ──────────────────────────────────────────
@@ -110,13 +94,14 @@ public class GameController : MonoBehaviour
         ui.ShowWinPanel();
     }
 
-    // ── Hint ──────────────────────────────────────────────────
+    // ── Hint — hiện vĩnh viễn cho đến khi Restart / HideGame ─
 
     readonly List<Vector2Int> hintCells = new();
     bool hintActive;
 
     void ShowHint()
     {
+        // Hint chỉ hiển thị một lần mỗi level
         if (hintActive || currentLevel.solution == null) return;
         hintActive = true;
 
@@ -129,16 +114,13 @@ public class GameController : MonoBehaviour
             if (idx >= currentLevel.solution.Length || !currentLevel.solution[idx]) continue;
 
             board.SetCellHintColor(r, c, hintGray);
-            hintCells.Add(new Vector2Int(c, r));
+            hintCells.Add(new Vector2Int(c, r));  // x=col, y=row
         }
-
-        StartCoroutine(ClearHintAfterDelay(6f));
     }
 
-    IEnumerator ClearHintAfterDelay(float delay)
+    // Gọi khi Restart hoặc HideGame để xoá hint cũ
+    void ClearHint()
     {
-        yield return new WaitForSeconds(delay);
-
         foreach (var cell in hintCells)
             board.ClearCellHintColor(cell.y, cell.x);
 

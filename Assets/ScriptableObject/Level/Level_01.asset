@@ -15,9 +15,9 @@ MonoBehaviour:
   rows: 4
   cols: 4
   colorMode: 0
-  rowCounts: 02000000030000000200000000000000
+  rowCounts: 02000000020000000300000001000000
   rowColors: []
-  colCounts: 01000000030000000200000001000000
+  colCounts: 01000000040000000200000001000000
   colColors: []
   pieces:
   - pieceName: L
@@ -35,7 +35,7 @@ MonoBehaviour:
     shapeRows: 1
     shapeCols: 1
     shapeCells: 01
-  solution: 00010100010101000001000100000000
+  solution: 00010100000101000101000100010000
   solutionColors: 
   displayName: Level 1
   thumbnail: {fileID: 0}

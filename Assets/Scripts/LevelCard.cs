@@ -45,7 +45,6 @@ public class LevelCard : MonoBehaviour
         cardButton.onClick.AddListener(() => 
         {
             GameManager.Instance.StartLevel(data);
-            FindFirstObjectByType<UIGameplay>().ShowUIGame();
         });
     }
 }

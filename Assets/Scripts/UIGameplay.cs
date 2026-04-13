@@ -31,6 +31,7 @@ public class UIGameplay : MonoBehaviour
     [SerializeField] Button restartButton;
     [SerializeField] Button menuButton;
     [SerializeField] GameObject UIGame;
+    [SerializeField] GameObject PieceSpawn;
 
     [Header("Win Panel")]
     [SerializeField] GameObject winPanel;
@@ -55,6 +56,7 @@ public class UIGameplay : MonoBehaviour
         });
         nextLevelButton.onClick.AddListener(() => controller.NextLevel());
         winRestartButton.onClick.AddListener(() => controller.RestartLevel());
+        PieceSpawn.SetActive(false);
     }
 
     // ── Setup (gọi mỗi khi load level) ───────────────────────
@@ -89,9 +91,11 @@ public class UIGameplay : MonoBehaviour
     public void ShowUIGame()
     {
         UIGame.SetActive(true);
+        PieceSpawn.SetActive(true);
     }
     public void HideUIGame()
     {
         UIGame.SetActive(false);
+        PieceSpawn.SetActive(false);
     }
 }
