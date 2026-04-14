@@ -16,6 +16,13 @@ public class GameController : MonoBehaviour
     LevelDataSO currentLevel;
 
     // ── Load / Unload ─────────────────────────────────────────
+    private void Awake()
+    {
+        input = FindFirstObjectByType<HandleInput>();
+
+        input.OnPiecePlaced   += HandlePiecePlaced;
+        input.OnPieceUnplaced += HandlePieceUnplaced;
+    }
 
     public void LoadLevel(LevelDataSO level)
     {
@@ -26,10 +33,6 @@ public class GameController : MonoBehaviour
         board.Build(level);
         clues.Build(level, board);
         pieces.SpawnPieces(level);
-        input = FindFirstObjectByType<HandleInput>();
-
-        input.OnPiecePlaced   += HandlePiecePlaced;
-        input.OnPieceUnplaced += HandlePieceUnplaced;
 
         int levelNumber = GameManager.Instance
             ? GameManager.Instance.GetLevelIndex(level) + 1 : 1;
@@ -42,10 +45,12 @@ public class GameController : MonoBehaviour
         input.OnPiecePlaced   -= HandlePiecePlaced;
         input.OnPieceUnplaced -= HandlePieceUnplaced;
 
+        StopAllCoroutines();
+        ClearHint();
+
         board.Clear();
         clues.Clear();
         pieces.Clear();
-        ClearHint();
         gameObject.SetActive(false);
     }
 

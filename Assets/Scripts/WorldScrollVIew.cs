@@ -3,9 +3,9 @@ using UnityEngine.InputSystem;
 
 public class WorldScrollView : MonoBehaviour
 {
-    public Vector3 targetPos = new Vector3(1, 0, 0);
-    Vector3 originalPos;
-    bool isMoved = false;
+    // public Vector3 targetPos = new Vector3(1, 0, 0);
+    // Vector3 originalPos;
+    // bool isMoved = false;
 
     public Transform content;
 
@@ -16,10 +16,10 @@ public class WorldScrollView : MonoBehaviour
     bool isDragging    = false;
     bool pieceDragging = false;   // true khi PieceManager đang kéo piece
 
-    void Start()
-    {
-        originalPos = transform.position;
-    }
+    // void Start()
+    // {
+    //     originalPos = transform.position;
+    // }
 
     void Update()
     {
@@ -48,13 +48,13 @@ public class WorldScrollView : MonoBehaviour
             isDragging = false;
         }
 
-        if (PointerDown())
-        {
-            if (!IsPointerOverItem())
-            {
-                HandleClick();
-            }
-        }
+        // if (PointerDown())
+        // {
+        //     if (!IsPointerOverItem())
+        //     {
+        //         HandleClick();
+        //     }
+        // }
     }
 
     // ── Gọi từ PieceManager ───────────────────────────────────
@@ -65,8 +65,8 @@ public class WorldScrollView : MonoBehaviour
         pieceDragging = true;
         isDragging    = false;
 
-        if (isMoved)
-            MoveBack();
+        // if (isMoved)
+        //     MoveBack();
     }
 
     // Khi thả piece: mở lại input scroll
@@ -77,34 +77,34 @@ public class WorldScrollView : MonoBehaviour
 
     // ── Internal ──────────────────────────────────────────────
 
-    void HandleClick()
-    {
-        Vector3 worldPos  = PointerWorldPos();
-        RaycastHit2D hit  = Physics2D.Raycast(worldPos, Vector2.zero);
+    // void HandleClick()
+    // {
+    //     Vector3 worldPos  = PointerWorldPos();
+    //     RaycastHit2D hit  = Physics2D.Raycast(worldPos, Vector2.zero);
 
-        if (!isMoved)
-        {
-            if (hit.collider != null && hit.collider.gameObject == gameObject)
-                MoveToTarget();
-        }
-        else
-        {
-            if (hit.collider == null || hit.collider.gameObject != gameObject)
-                MoveBack();
-        }
-    }
+    //     if (!isMoved)
+    //     {
+    //         if (hit.collider != null && hit.collider.gameObject == gameObject)
+    //             MoveToTarget();
+    //     }
+    //     else
+    //     {
+    //         if (hit.collider == null || hit.collider.gameObject != gameObject)
+    //             MoveBack();
+    //     }
+    // }
 
-    void MoveToTarget()
-    {
-        transform.position = targetPos;
-        isMoved            = true;
-    }
+    // void MoveToTarget()
+    // {
+    //     transform.position = targetPos;
+    //     isMoved            = true;
+    // }
 
-    void MoveBack()
-    {
-        transform.position = originalPos;
-        isMoved            = false;
-    }
+    // void MoveBack()
+    // {
+    //     transform.position = originalPos;
+    //     isMoved            = false;
+    // }
 
     void MoveContent(float deltaY)
     {
@@ -119,11 +119,11 @@ public class WorldScrollView : MonoBehaviour
         return hit.collider != null && hit.collider.gameObject == gameObject;
     }
 
-    bool IsPointerOverItem()
-    {
-        RaycastHit2D hit = Physics2D.Raycast(PointerWorldPos(), Vector2.zero);
-        return hit.collider != null && hit.collider.CompareTag("Piece");
-    }
+    // bool IsPointerOverItem()
+    // {
+    //     RaycastHit2D hit = Physics2D.Raycast(PointerWorldPos(), Vector2.zero);
+    //     return hit.collider != null && hit.collider.CompareTag("Piece");
+    // }
 
     // ── Input helpers ─────────────────────────────────────────
 

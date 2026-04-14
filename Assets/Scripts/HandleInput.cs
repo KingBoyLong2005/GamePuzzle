@@ -8,10 +8,10 @@ public class HandleInput : MonoBehaviour
     public event Action OnPiecePlaced;
     public event Action OnPieceUnplaced;
     public PieceInstance heldPiece;
-    public bool          pendingUnplace;
+    private bool          pendingUnplace;
     public bool          isDragging;
-    public float         pressTime;
-    public Vector3       holdOffset;
+    private float         pressTime;
+    private Vector3       holdOffset;
     void Update()
     {
         if (PieceManager.Instance.level == null) return;

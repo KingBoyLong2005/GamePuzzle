@@ -115,7 +115,7 @@ public class AdManager : MonoBehaviour
 
         if (!sdkInitialized)
         {
-            // FindFirstObjectByType<GameController>()?.ShowToast("SDK chưa sẵn sàng. Thử lại!");
+            FindFirstObjectByType<UIGameplay>()?.ShowToast("SDK chưa sẵn sàng. Thử lại!");
             pendingCallback = null;
             return;
         }
@@ -124,7 +124,7 @@ public class AdManager : MonoBehaviour
             rewardedAd.ShowAd();
         else
         {
-            // FindFirstObjectByType<GameController>()?.ShowToast("Đang tải quảng cáo... Thử lại sau!");
+            FindFirstObjectByType<UIGameplay>()?.ShowToast("Đang tải quảng cáo... Thử lại sau!");
             pendingCallback = null;
             Reload();
         }
