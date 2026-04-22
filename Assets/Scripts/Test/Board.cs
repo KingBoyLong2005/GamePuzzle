@@ -9,15 +9,38 @@ public class Board : MonoBehaviour
     [SerializeField] private GameObject Cell;
     [SerializeField] private GameObject ClueBadge;
     [SerializeField] LevelBoardData levelBoardData;
+    private Cell[,] cellList;
     public int width = 5;
     public int height = 5;
 
     private void Start()
     {
-        
+        cellList = new Cell[levelBoardData.width, levelBoardData.height];        
         CreateBoard(levelBoardData.width, levelBoardData.height);
         CreateClueBadge();
 
+
+    }
+    private void Update()
+    {
+        // if (Input.GetKeyDown(KeyCode.Space))
+        // {   
+        //     for (int y = 0; y < levelBoardData.height; y++)
+        //     {
+        //         for (int x = 0; x < levelBoardData.width; x++)
+        //         {
+        //             Debug.Log($" Cell at ({x}, {y}): " + cellList[x, y].GetColor());
+        //         }
+        //     }
+        // }
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            Debug.Log(CheckFinish());
+            if(CheckFinish() == levelBoardData.GetTotalActiveCount())
+            {
+                Debug.Log("Finish");
+            }
+        }
     }
 
     public void CreateBoard(int width, int height)
@@ -29,6 +52,7 @@ public class Board : MonoBehaviour
             {
                 var cell = Instantiate(Cell, startPos + new Vector3(x, -y, 0), Quaternion.identity);
                 cell.transform.SetParent(this.transform);
+                cellList[x, y] = cell.GetComponent<Cell>();
             }
         }
     }
@@ -66,28 +90,44 @@ public class Board : MonoBehaviour
         }
 
     }
-    public int GetClues(TileType[] line)
+    public int CheckFinish()
     {
-        List<int> clues = new List<int>();
-        int count = 0;
-
-        foreach (var tile in line)
+        int countCheck = 0;
+        for (int y = 0; y < levelBoardData.height; y++)
         {
-            if (tile == TileType.Active) // Giả sử 1 (Active) là ô đen
+            for (int x = 0; x < levelBoardData.width; x++)
             {
-                count++;
-            }
-            else
-            {
-                if (count > 0) clues.Add(count);
-                count = 0;
+                if(cellList[x, y].GetColor() == Color.red && levelBoardData.GetTile(x, y) == TileType.Active)
+                {
+                    countCheck++;
+                }
+
             }
         }
-        if (count > 0) clues.Add(count);
-
-        // Nếu hàng/cột trống, thường Nonogram hiện số 0
-        if (clues.Count == 0) clues.Add(0); 
-
-        return count;
+        return countCheck;
     }
+    // public int GetClues(TileType[] line)
+    // {
+    //     List<int> clues = new List<int>();
+    //     int count = 0;
+
+    //     foreach (var tile in line)
+    //     {
+    //         if (tile == TileType.Active) // Giả sử 1 (Active) là ô đen
+    //         {
+    //             count++;
+    //         }
+    //         else
+    //         {
+    //             if (count > 0) clues.Add(count);
+    //             count = 0;
+    //         }
+    //     }
+    //     if (count > 0) clues.Add(count);
+
+    //     // Nếu hàng/cột trống, thường Nonogram hiện số 0
+    //     if (clues.Count == 0) clues.Add(0); 
+
+    //     return count;
+    // }
 }

@@ -5,14 +5,14 @@ public class Cell : MonoBehaviour
 {
     bool isDown = false;
     // Start is called once before the first execution of Update after the MonoBehaviour is created
-    // private void Update()
-    // {
-    //     Vector3 worldPos = PointerWorldPos();
-    //     if(PointDown())
-    //     {
-    //         OnDown(worldPos);
-    //     }
-    // }
+    private void Update()
+    {
+        Vector3 worldPos = PointerWorldPos();
+        if(PointDown())
+        {
+            OnDown(worldPos);
+        }
+    }
 
     bool PointDown()
     {
@@ -48,5 +48,14 @@ public class Cell : MonoBehaviour
         var pos = Camera.main.ScreenToWorldPoint(screen);
         pos.z = 0;
         return pos;
+    }
+    public Color GetColor()
+    {
+        return GetComponent<SpriteRenderer>().color;
+        
+        // if (c == Color.red) return "Red";
+        // if (c == Color.white) return "White";
+        
+        // return c.ToString(); // Trả về RGBA nếu là màu khác
     }
 }
