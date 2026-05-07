@@ -45,3 +45,4 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Piece
   piecePrefab: {fileID: 117033339547395420, guid: 9796612442f8cfb44b8466e64db769ba, type: 3}
+  levelData: {fileID: 0}
