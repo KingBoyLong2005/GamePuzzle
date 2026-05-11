@@ -20,44 +20,79 @@ public class DraggablePiece : MonoBehaviour, IDraggable
 
     public void OnDragStart(Vector3 worldPos)
     {
-        // Hiệu ứng nhấc mảnh ghép lên (Juice)
-        transform.localScale = Vector3.one * 1.1f;
+        Debug.Log("Đã gắp mảnh ghép: " + gameObject.name);
+
         _isPlaced = false;
 
-        // Đưa lên trên cùng để không bị các mảnh khác che
-        transform.position += Vector3.back * 0.5f;
+        // 1. Hiệu ứng phóng lớn một chút để người chơi thấy rõ mình đang cầm nó
+        transform.localScale = Vector3.one * 1.1f;
+
+        // 2. Thay đổi trục Z để mảnh ghép luôn đè lên trên các ô lưới (Board)
+        // Giả sử Board của bạn ở Z = 0, thì Piece khi kéo nên ở Z = -1
+        Vector3 newPos = transform.position;
+        newPos.z = -1f;
+        transform.position = newPos;
+
+        // 3. (Tùy chọn) Đổi màu mờ đi một chút nếu muốn
+        // GetComponentInChildren<SpriteRenderer>().color = new Color(1, 1, 1, 0.8f);
     }
 
     public void OnDragging(Vector3 worldPos)
     {
         // Di chuyển mảnh ghép theo ngón tay/chuột
         transform.position = worldPos;
+        Debug.Log("Đang kéo mảnh ghép: " + gameObject.name);
 
         // NÂNG CAO: Bạn có thể thêm logic Ghost Preview tại đây 
         // để hiển thị mảnh ghép mờ mờ trên lưới trước khi thả
     }
 
+    //public void OnDragEnd(Vector3 worldPos)
+    //{
+    //    transform.localScale = Vector3.one;
+
+    //    // Lấy tọa độ lưới gần nhất từ GridManager
+    //    Vector2Int gridPos = GridManager.Instance.WorldToGrid(worldPos);
+
+    //    // Kiểm tra xem vị trí này có hợp lệ không (có trống không, có bị chặn không)
+    //    if (GridManager.Instance.CanPlacePiece(occupiedCells, gridPos))
+    //    {
+    //        // Hút vào tâm ô lưới (Snap)
+    //        transform.position = GridManager.Instance.GridToWorld(gridPos);
+    //        _isPlaced = true;
+
+    //        // Thông báo cho hệ thống kiểm tra logic thắng (Nonogram Check)
+    //        // GridManager.Instance.PlacePieceOnGrid(occupiedCells, gridPos);
+    //    }
+    //    else
+    //    {
+    //        // Nếu không hợp lệ, bay về vị trí cũ
+    //        transform.position = _originalPosition;
+    //    }
+    //}
     public void OnDragEnd(Vector3 worldPos)
     {
         transform.localScale = Vector3.one;
+        Board board = Object.FindFirstObjectByType<Board>();
 
-        // Lấy tọa độ lưới gần nhất từ GridManager
-        Vector2Int gridPos = GridManager.Instance.WorldToGrid(worldPos);
-
-        // Kiểm tra xem vị trí này có hợp lệ không (có trống không, có bị chặn không)
-        if (GridManager.Instance.CanPlacePiece(occupiedCells, gridPos))
+        if (board != null)
         {
-            // Hút vào tâm ô lưới (Snap)
-            transform.position = GridManager.Instance.GridToWorld(gridPos);
-            _isPlaced = true;
+            // Sử dụng hàm tính toán tọa độ lưới mà bạn đã có trong Board
+            Cell targetCell = board.GetCellFromWorldPos(worldPos);
 
-            // Thông báo cho hệ thống kiểm tra logic thắng (Nonogram Check)
-            // GridManager.Instance.PlacePieceOnGrid(occupiedCells, gridPos);
-        }
-        else
-        {
-            // Nếu không hợp lệ, bay về vị trí cũ
-            transform.position = _originalPosition;
+            if (targetCell != null)
+            {
+                //transform.position = targetCell.transform.position;
+                transform.position = new Vector3(targetCell.transform.position.x, targetCell.transform.position.y, -1f);
+                targetCell.SetState(true); // Đổi sang màu đỏ
+                _isPlaced = true;
+                Debug.Log("Đã đặt mảnh ghép. Điểm hiện tại: " + board.CheckFinish());
+            }
+            else
+            {
+                transform.position = _originalPosition;
+                _isPlaced = false;
+            }
         }
     }
 

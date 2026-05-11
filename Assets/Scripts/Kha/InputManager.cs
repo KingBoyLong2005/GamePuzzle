@@ -1,60 +1,68 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.InputSystem;
 
 public class InputManager : MonoBehaviour
 {
     public static InputManager Instance;
-
-    [Header("Settings")]
     [SerializeField] private LayerMask draggableLayer;
     [SerializeField] private Camera mainCamera;
 
     private IDraggable _selectedPiece;
     private Vector3 _dragOffset;
-    private float _zDistance;
 
     private void Awake() => Instance = this;
-
-    public void OnPointerAction(InputAction.CallbackContext context)
+    private void Update()
     {
-        Vector2 screenPos = Pointer.current.position.ReadValue();
-
-        if (context.started) StartDrag(screenPos);
-        else if (context.performed) ContinueDrag(screenPos);
-        else if (context.canceled) EndDrag();
-    }
-
-    private void StartDrag(Vector2 screenPos)
-    {
-        Ray ray = mainCamera.ScreenPointToRay(screenPos);
-        if (Physics.Raycast(ray, out RaycastHit hit, 100f, draggableLayer))
+        // NẾU ĐANG CÓ MẢNH GHÉP ĐƯỢC CHỌN -> CẬP NHẬT VỊ TRÍ LIÊN TỤC
+        if (_selectedPiece != null)
         {
-            _selectedPiece = hit.collider.GetComponent<IDraggable>();
-            if (_selectedPiece != null)
-            {
-                _zDistance = Vector3.Distance(mainCamera.transform.position, hit.point);
-                _dragOffset = _selectedPiece.GetTransform().position - GetWorldPos(screenPos);
-                _selectedPiece.OnDragStart(GetWorldPos(screenPos));
-            }
+            // Lấy vị trí chuột trực tiếp từ hệ thống (không phụ thuộc Action)
+            Vector2 mouseScreenPos = Mouse.current.position.ReadValue();
+            Vector3 mouseWorldPos = mainCamera.ScreenToWorldPoint(new Vector3(mouseScreenPos.x, mouseScreenPos.y, Mathf.Abs(mainCamera.transform.position.z)));
+
+            // Di chuyển mảnh ghép (kèm offset để không bị giật tâm)
+            _selectedPiece.OnDragging(new Vector3(mouseWorldPos.x, mouseWorldPos.y, 0) + _dragOffset);
         }
     }
-
-    private void ContinueDrag(Vector2 screenPos)
+    public void OnPointerAction(InputAction.CallbackContext context)
     {
-        if (_selectedPiece == null) return;
-        _selectedPiece.OnDragging(GetWorldPos(screenPos) + _dragOffset);
-    }
+        if (mainCamera == null) return; 
+        Vector2 screenPos = Pointer.current.position.ReadValue();
+        // Chuyển tọa độ màn hình sang thế giới (World Point)
+        Vector3 worldPos = mainCamera.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, Mathf.Abs(mainCamera.transform.position.z)));
+        Vector2 mousePos2D = new Vector2(worldPos.x, worldPos.y);
 
-    private void EndDrag()
-    {
-        if (_selectedPiece == null) return;
-        _selectedPiece.OnDragEnd(_selectedPiece.GetTransform().position);
-        _selectedPiece = null;
-    }
-
-    public Vector3 GetWorldPos(Vector2 screenPos)
-    {
-        Ray ray = mainCamera.ScreenPointToRay(screenPos);
-        return ray.GetPoint(_zDistance);
+        if (context.started)    
+        {
+            Debug.Log("Pointer Down at: " + worldPos);
+            // Bắn tia 2D kiểm tra vật thể
+            RaycastHit2D hit = Physics2D.Raycast(mousePos2D, Vector2.zero, 0f, draggableLayer);
+            if (hit.collider != null)
+            {
+                _selectedPiece = hit.collider.GetComponent<IDraggable>();
+                if (_selectedPiece != null)
+                {
+                    _dragOffset = _selectedPiece.GetTransform().position - (Vector3)mousePos2D;
+                    _selectedPiece.OnDragStart(worldPos);
+                }
+            }
+        }
+        else if (context.performed)
+        {
+            Debug.Log("Pointer Move at: " + worldPos);
+            if (_selectedPiece != null)
+            {
+                _selectedPiece.OnDragging((Vector3)mousePos2D + _dragOffset);
+            }
+        }
+        else if (context.canceled)
+        {
+            Debug.Log("Pointer Up at: " + worldPos);
+            if (_selectedPiece != null)
+            {
+                _selectedPiece.OnDragEnd(worldPos); // Gọi hàm này để Snap vào lưới
+                _selectedPiece = null; // Xóa tham chiếu để không dính theo chuột nữa
+            }
+        }
     }
 }

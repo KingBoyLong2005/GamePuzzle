@@ -130,4 +130,23 @@ public class Board : MonoBehaviour
 
     //     return count;
     // }
+    public Cell GetCellFromWorldPos(Vector3 worldPos)
+    {
+        // Tính toán lại vị trí bắt đầu giống hệt trong CreateBoard
+        //float startX = -(levelBoardData.width - 1) / 2f;
+        //float startY = (levelBoardData.height - 1) / 2f;
+        float startX = -(width - 1) / 2f;
+        float startY = (height - 1) / 2f;
+
+        // Tính toán chỉ số x, y dựa trên khoảng cách từ điểm chạm đến startPos
+        int x = Mathf.RoundToInt(worldPos.x - startX);
+        int y = Mathf.RoundToInt(startY - worldPos.y);
+
+        // Kiểm tra xem có nằm trong phạm vi mảng không
+        if (x >= 0 && x < levelBoardData.width && y >= 0 && y < levelBoardData.height)
+        {
+            return cellList[x, y];
+        }
+        return null;
+    }
 }
