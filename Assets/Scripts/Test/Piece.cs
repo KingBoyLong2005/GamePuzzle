@@ -14,11 +14,12 @@ public class Piece : MonoBehaviour
     {
         foreach (var piece in levelData.pieces)
         {
+            GameObject PieceObject = new GameObject("Piece L");
             foreach (var pos in piece.positions)
             {
                 GameObject newPiece = Instantiate(piecePrefab, gameObject.transform);
                 newPiece.transform.position = new Vector3(transform.position.x + pos.x, transform.position.y + pos.y, 0);
-                newPiece.transform.SetParent(transform); 
+                newPiece.transform.SetParent(PieceObject.transform); 
             }
         }
     }
