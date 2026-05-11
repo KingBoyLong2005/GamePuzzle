@@ -16,8 +16,9 @@ public class Piece : MonoBehaviour
         {
             foreach (var pos in piece.positions)
             {
-                GameObject newPiece = Instantiate(piecePrefab, transform);
-                newPiece.transform.position = new Vector3(pos.x, pos.y, 0);
+                GameObject newPiece = Instantiate(piecePrefab, gameObject.transform);
+                newPiece.transform.position = new Vector3(transform.position.x + pos.x, transform.position.y + pos.y, 0);
+                newPiece.transform.SetParent(transform); 
             }
         }
     }
