@@ -15,6 +15,7 @@ public class Piece : MonoBehaviour
         foreach (var piece in levelData.pieces)
         {
             GameObject PieceObject = new GameObject("Piece L");
+            PieceObject.transform.SetParent(transform); // Đặt PieceObject làm con của GameObject hiện tại
             foreach (var pos in piece.positions)
             {
                 GameObject newPiece = Instantiate(piecePrefab, gameObject.transform);
