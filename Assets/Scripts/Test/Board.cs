@@ -52,7 +52,10 @@ public class Board : MonoBehaviour
             {
                 var cell = Instantiate(Cell, startPos + new Vector3(x, -y, 0), Quaternion.identity);
                 cell.transform.SetParent(this.transform);
-                cellList[x, y] = cell.GetComponent<Cell>();
+                Cell cellComponent = cell.GetComponent<Cell>();
+                cellComponent.x = x;
+                cellComponent.y = y;
+                cellList[x, y] = cellComponent;
             }
         }
     }
@@ -147,6 +150,15 @@ public class Board : MonoBehaviour
         {
             return cellList[x, y];
         }
+        return null;
+    }
+    public Cell GetCell(int x, int y)
+    {
+        if (x >= 0 && x < levelBoardData.width && y >= 0 && y < levelBoardData.height)
+        {
+            return cellList[x, y];
+        }
+
         return null;
     }
 }

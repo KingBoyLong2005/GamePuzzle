@@ -21,12 +21,16 @@ public class InputManager : MonoBehaviour
             Vector3 mouseWorldPos = mainCamera.ScreenToWorldPoint(new Vector3(mouseScreenPos.x, mouseScreenPos.y, Mathf.Abs(mainCamera.transform.position.z)));
 
             // Di chuyển mảnh ghép (kèm offset để không bị giật tâm)
-            _selectedPiece.OnDragging(new Vector3(mouseWorldPos.x, mouseWorldPos.y, 0) + _dragOffset);
+            Vector3 targetPos = mouseWorldPos + _dragOffset;
+            targetPos.z = -1f;
+
+            _selectedPiece.OnDragging(targetPos);
         }
     }
     public void OnPointerAction(InputAction.CallbackContext context)
     {
         if (mainCamera == null) return; 
+
         Vector2 screenPos = Pointer.current.position.ReadValue();
         // Chuyển tọa độ màn hình sang thế giới (World Point)
         Vector3 worldPos = mainCamera.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, Mathf.Abs(mainCamera.transform.position.z)));
@@ -39,10 +43,12 @@ public class InputManager : MonoBehaviour
             RaycastHit2D hit = Physics2D.Raycast(mousePos2D, Vector2.zero, 0f, draggableLayer);
             if (hit.collider != null)
             {
-                _selectedPiece = hit.collider.GetComponent<IDraggable>();
+                _selectedPiece = hit.collider.GetComponentInParent<IDraggable>();
                 if (_selectedPiece != null)
                 {
+                    Debug.Log($"[InputManager] Đã bắt trúng mảnh: {hit.collider.transform.parent.name}");
                     _dragOffset = _selectedPiece.GetTransform().position - (Vector3)mousePos2D;
+                    _dragOffset.z = 0f; // Đảm bảo offset chỉ ảnh hưởng đến X và Y
                     _selectedPiece.OnDragStart(worldPos);
                 }
             }
@@ -60,7 +66,7 @@ public class InputManager : MonoBehaviour
             Debug.Log("Pointer Up at: " + worldPos);
             if (_selectedPiece != null)
             {
-                _selectedPiece.OnDragEnd(worldPos); // Gọi hàm này để Snap vào lưới
+                _selectedPiece.OnDragEnd(_selectedPiece.GetTransform().position); // Gọi hàm này để Snap vào lưới
                 _selectedPiece = null; // Xóa tham chiếu để không dính theo chuột nữa
             }
         }

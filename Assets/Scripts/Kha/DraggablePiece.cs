@@ -5,15 +5,17 @@ public class DraggablePiece : MonoBehaviour, IDraggable
 {
     [Header("Piece Settings")]
     [SerializeField] private int pieceID; // Dùng để check đúng ô (Type 1.1A)
-    [SerializeField] private List<Vector2Int> occupiedCells; // Hình dạng mảnh ghép
+    [SerializeField] public List<Vector2Int> occupiedCells; // Hình dạng mảnh ghép
 
     private Vector3 _originalPosition;
     private bool _isPlaced = false;
 
-    private void Start()
+    private void Awake()
     {
-        // Lưu lại vị trí ban đầu để quay về nếu đặt sai
-        _originalPosition = transform.position;
+        // Cấp lệnh cho Hệ thống vật lý của Unity cho phép cụm Object này di chuyển tự do qua Code
+        Rigidbody2D rb = gameObject.AddComponent<Rigidbody2D>();
+        rb.bodyType = RigidbodyType2D.Kinematic;
+        rb.simulated = true;
     }
 
     // --- Thực thi Interface IDraggable ---
@@ -47,53 +49,75 @@ public class DraggablePiece : MonoBehaviour, IDraggable
         // để hiển thị mảnh ghép mờ mờ trên lưới trước khi thả
     }
 
-    //public void OnDragEnd(Vector3 worldPos)
-    //{
-    //    transform.localScale = Vector3.one;
-
-    //    // Lấy tọa độ lưới gần nhất từ GridManager
-    //    Vector2Int gridPos = GridManager.Instance.WorldToGrid(worldPos);
-
-    //    // Kiểm tra xem vị trí này có hợp lệ không (có trống không, có bị chặn không)
-    //    if (GridManager.Instance.CanPlacePiece(occupiedCells, gridPos))
-    //    {
-    //        // Hút vào tâm ô lưới (Snap)
-    //        transform.position = GridManager.Instance.GridToWorld(gridPos);
-    //        _isPlaced = true;
-
-    //        // Thông báo cho hệ thống kiểm tra logic thắng (Nonogram Check)
-    //        // GridManager.Instance.PlacePieceOnGrid(occupiedCells, gridPos);
-    //    }
-    //    else
-    //    {
-    //        // Nếu không hợp lệ, bay về vị trí cũ
-    //        transform.position = _originalPosition;
-    //    }
-    //}
     public void OnDragEnd(Vector3 worldPos)
     {
         transform.localScale = Vector3.one;
         Board board = Object.FindFirstObjectByType<Board>();
-
-        if (board != null)
+        if (board == null)
         {
-            // Sử dụng hàm tính toán tọa độ lưới mà bạn đã có trong Board
-            Cell targetCell = board.GetCellFromWorldPos(worldPos);
+            ReturnToQueue();
+            return;
+        }
 
-            if (targetCell != null)
+        Cell rootCell = board.GetCellFromWorldPos(worldPos);
+
+        if (rootCell != null)
+        {
+            if (CanPlaceAt(board, rootCell))
             {
-                //transform.position = targetCell.transform.position;
-                transform.position = new Vector3(targetCell.transform.position.x, targetCell.transform.position.y, -1f);
-                targetCell.SetState(true); // Đổi sang màu đỏ
+                transform.position = new Vector3(rootCell.transform.position.x, rootCell.transform.position.y, -1f);
+
+                foreach (Vector2Int offset in occupiedCells)
+                {
+                    // Tính tọa độ ô thực tế dựa trên ô gốc (rootCell)
+                    int targetX = rootCell.x + offset.x;
+                    int targetY = rootCell.y - offset.y; 
+
+                    board.GetCell(targetX, targetY).SetState(true);
+                }
                 _isPlaced = true;
-                Debug.Log("Đã đặt mảnh ghép. Điểm hiện tại: " + board.CheckFinish());
+                Debug.Log("Đã đặt mảnh ghép");
             }
             else
             {
-                transform.position = _originalPosition;
-                _isPlaced = false;
+                Debug.Log("Vị trí bị vướng!");
+                ReturnToQueue();
             }
         }
+        else
+        {
+            Debug.Log("Thả ngoài bàn cờ!");
+            ReturnToQueue();
+        }
+    }
+    private void ReturnToQueue()
+    {
+        transform.position = _originalPosition;
+        _isPlaced = false;
+    }
+    private bool CanPlaceAt(Board board, Cell root)
+    {
+        foreach (Vector2Int offset in occupiedCells)
+        {
+            int targetX = root.x + offset.x;
+            int targetY = root.y - offset.y;
+
+            // Lấy ô Cell thực tế từ Board
+            Cell targetCell = board.GetCell(targetX, targetY);
+
+            // Nếu targetCell trả về null (nghĩa là ô này nằm ngoài rìa Board)
+            // Hoặc ô đó đã được lấp đầy trước đó (isFilled == true)
+            if (targetCell == null || targetCell.isFilled)
+            {
+                return false; 
+            }
+        }
+        return true; 
+    }
+    public void SaveOriginalPosition()
+    {
+        _originalPosition = this.transform.position;
+        Debug.Log($"Đã lưu vị trí ban đầu của khối tại: {_originalPosition}");
     }
 
     public Transform GetTransform() => transform;
