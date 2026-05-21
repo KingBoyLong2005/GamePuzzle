@@ -39,54 +39,74 @@ public class DraggablePiece : MonoBehaviour, IDraggable
         // GetComponentInChildren<SpriteRenderer>().color = new Color(1, 1, 1, 0.8f);
     }
 
-    public void OnDragging(Vector3 worldPos)
+    public void OnDragging(Vector3 newPosition)
     {
         // Di chuyển mảnh ghép theo ngón tay/chuột
-        transform.position = worldPos;
+        //transform.position = worldPos;
+        if (!_isPlaced)
+        {
+            // Di chuyển cả khối liền (Cấp 2) theo chuột, trục Z khóa ở -1
+            transform.position = new Vector3(newPosition.x, newPosition.y, -1f);
+        }
         Debug.Log("Đang kéo mảnh ghép: " + gameObject.name);
 
         // NÂNG CAO: Bạn có thể thêm logic Ghost Preview tại đây 
         // để hiển thị mảnh ghép mờ mờ trên lưới trước khi thả
     }
-
-    public void OnDragEnd(Vector3 worldPos)
+    
+    public void OnDragEnd(Vector3 dummy)
     {
         transform.localScale = Vector3.one;
+        if (_isPlaced)
+        {
+            Debug.Log("Mảnh ghép đã được đặt trước đó, không cần kiểm tra lại.");
+            return;
+        }
         Board board = Object.FindFirstObjectByType<Board>();
-        if (board == null)
+        if (board == null || transform.childCount == 0)
         {
             ReturnToQueue();
             return;
         }
 
-        Cell rootCell = board.GetCellFromWorldPos(worldPos);
-
-        if (rootCell != null)
+        Transform anchorChild = transform.GetChild(0);
+        Cell anchorCell = board.GetCellFromWorldPos(anchorChild.position);
+        if (anchorCell == null)
         {
-            if (CanPlaceAt(board, rootCell))
-            {
-                transform.position = new Vector3(rootCell.transform.position.x, rootCell.transform.position.y, -1f);
+            Debug.Log("Khối Neo nằm ngoài bàn cờ!");
+            ReturnToQueue();
+            return;
+        }
+        Vector2Int anchorDataPos = occupiedCells[0];
 
-                foreach (Vector2Int offset in occupiedCells)
+        if (CanPlaceWholeBody(board, anchorCell, anchorDataPos))
+        {
+            Vector3 offsetToAnchor = transform.position - anchorChild.position;
+            transform.position = new Vector3(anchorCell.transform.position.x + offsetToAnchor.x, anchorCell.transform.position.y + offsetToAnchor.y, -1f);
+
+            foreach (Vector2Int posData in occupiedCells)
+            {
+                // Tính toán độ lệch tương đối (Delta) so với Khối Neo
+                int deltaX = posData.x - anchorDataPos.x;
+                int deltaY = posData.y - anchorDataPos.y;
+
+                // Chiếu độ lệch đó lên ô lưới bàn cờ (Trục Y dùng dấu trừ do ma trận ngược của bàn cờ)
+                int targetX = anchorCell.x + deltaX;
+                int targetY = anchorCell.y - deltaY;
+
+                Cell targetCell = board.GetCell(targetX, targetY);
+                if (targetCell != null)
                 {
-                    // Tính tọa độ ô thực tế dựa trên ô gốc (rootCell)
-                    int targetX = rootCell.x + offset.x;
-                    int targetY = rootCell.y - offset.y; 
-
-                    board.GetCell(targetX, targetY).SetState(true);
+                    targetCell.SetState(true); // Đổi trạng thái ô thành ĐÃ ĐẦY
                 }
-                _isPlaced = true;
-                Debug.Log("Đã đặt mảnh ghép");
             }
-            else
-            {
-                Debug.Log("Vị trí bị vướng!");
-                ReturnToQueue();
-            }
+
+            _isPlaced = true;
+            Debug.Log("Đã lấp đầy các ô trên bàn cờ cho khối liền thành công!");
         }
         else
         {
-            Debug.Log("Thả ngoài bàn cờ!");
+            Debug.Log("Vị trí của khối liền bị vướng hoặc lọt ra ngoài bảng!");
             ReturnToQueue();
         }
     }
@@ -95,24 +115,28 @@ public class DraggablePiece : MonoBehaviour, IDraggable
         transform.position = _originalPosition;
         _isPlaced = false;
     }
-    private bool CanPlaceAt(Board board, Cell root)
+    
+    private bool CanPlaceWholeBody(Board board, Cell anchorCell, Vector2Int anchorDataPos)
     {
-        foreach (Vector2Int offset in occupiedCells)
+        foreach (Vector2Int posData in occupiedCells)
         {
-            int targetX = root.x + offset.x;
-            int targetY = root.y - offset.y;
+            // Tính khoảng cách lệch tương đối của ô này so với ô Neo
+            int deltaX = posData.x - anchorDataPos.x;
+            int deltaY = posData.y - anchorDataPos.y;
 
-            // Lấy ô Cell thực tế từ Board
+            // Tính vị trí ô lưới mục tiêu trên bàn cờ
+            int targetX = anchorCell.x + deltaX;
+            int targetY = anchorCell.y - deltaY;
+
             Cell targetCell = board.GetCell(targetX, targetY);
 
-            // Nếu targetCell trả về null (nghĩa là ô này nằm ngoài rìa Board)
-            // Hoặc ô đó đã được lấp đầy trước đó (isFilled == true)
+            // Chỉ cần 1 ô vuông con bị lọt ra ngoài bảng hoặc đè lên ô đã có mảnh khác -> Thất bại
             if (targetCell == null || targetCell.isFilled)
             {
-                return false; 
+                return false;
             }
         }
-        return true; 
+        return true;
     }
     public void SaveOriginalPosition()
     {
