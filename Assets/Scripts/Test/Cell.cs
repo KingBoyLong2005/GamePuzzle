@@ -5,7 +5,12 @@ public class Cell : MonoBehaviour
     public int x;
     public int y;
     public bool isFilled = false;
+    private Color originalColor;
     // Board sẽ gọi hàm này khi Piece được đặt lên thành công
+    private void Awake()
+    {
+        originalColor = GetComponent<SpriteRenderer>().color;
+    }
     public void SetState(bool filled)
     {
         isFilled = filled;
@@ -14,7 +19,7 @@ public class Cell : MonoBehaviour
         SpriteRenderer renderer = GetComponent<SpriteRenderer>();
         if (renderer != null)
         {
-            renderer.color = filled ? Color.red : Color.white;
+            renderer.color = filled ? Color.red : originalColor;
         }
     }
 

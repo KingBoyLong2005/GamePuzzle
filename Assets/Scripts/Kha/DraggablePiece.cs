@@ -9,10 +9,12 @@ public class DraggablePiece : MonoBehaviour, IDraggable
 
     private Vector3 _originalPosition;
     private bool _isPlaced = false;
+    private Board board;
 
     private void Awake()
     {
         // Cấp lệnh cho Hệ thống vật lý của Unity cho phép cụm Object này di chuyển tự do qua Code
+        board = FindFirstObjectByType<Board>();
         Rigidbody2D rb = gameObject.AddComponent<Rigidbody2D>();
         rb.bodyType = RigidbodyType2D.Kinematic;
         rb.simulated = true;
@@ -24,10 +26,37 @@ public class DraggablePiece : MonoBehaviour, IDraggable
     {
         Debug.Log("Đã gắp mảnh ghép: " + gameObject.name);
 
+        if (_isPlaced && board != null && transform.childCount > 0)
+        {
+            Transform anchorChild = transform.GetChild(0);
+            Cell anchorCell = board.GetCellFromWorldPos(anchorChild.position);
+
+            if (anchorCell != null)
+            {
+                Vector2Int anchorDataPos = occupiedCells[0];
+
+                foreach (Vector2Int posData in occupiedCells)
+                {
+                    int deltaX = posData.x - anchorDataPos.x;
+                    int deltaY = posData.y - anchorDataPos.y;
+
+                    int targetX = anchorCell.x + deltaX;
+                    int targetY = anchorCell.y - deltaY;
+
+                    Cell targetCell = board.GetCell(targetX, targetY);
+                    if (targetCell != null)
+                    {
+                        targetCell.SetState(false); 
+                    }
+                }
+                Debug.Log("Đã giải phóng các ô cũ trên bàn cờ để di chuyển!");
+            }
+        }
+
         _isPlaced = false;
 
         // 1. Hiệu ứng phóng lớn một chút để người chơi thấy rõ mình đang cầm nó
-        transform.localScale = Vector3.one * 1.1f;
+        // transform.localScale = Vector3.one * 1.1f;
 
         // 2. Thay đổi trục Z để mảnh ghép luôn đè lên trên các ô lưới (Board)
         // Giả sử Board của bạn ở Z = 0, thì Piece khi kéo nên ở Z = -1
@@ -49,20 +78,19 @@ public class DraggablePiece : MonoBehaviour, IDraggable
             transform.position = new Vector3(newPosition.x, newPosition.y, -1f);
         }
         Debug.Log("Đang kéo mảnh ghép: " + gameObject.name);
-
+        
         // NÂNG CAO: Bạn có thể thêm logic Ghost Preview tại đây 
         // để hiển thị mảnh ghép mờ mờ trên lưới trước khi thả
     }
     
     public void OnDragEnd(Vector3 dummy)
     {
-        transform.localScale = Vector3.one;
+        // transform.localScale = Vector3.one;
         if (_isPlaced)
         {
             Debug.Log("Mảnh ghép đã được đặt trước đó, không cần kiểm tra lại.");
             return;
         }
-        Board board = Object.FindFirstObjectByType<Board>();
         if (board == null || transform.childCount == 0)
         {
             ReturnToQueue();

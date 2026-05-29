@@ -8,19 +8,19 @@ public class Board : MonoBehaviour
 
     [SerializeField] private GameObject Cell;
     [SerializeField] private GameObject ClueBadge;
-    [SerializeField] LevelBoardData levelBoardData;
+    [SerializeField] public LevelBoardData levelBoardData;
     private Cell[,] cellList;
     public int width = 5;
     public int height = 5;
 
-    private void Start()
-    {
-        cellList = new Cell[levelBoardData.width, levelBoardData.height];        
-        CreateBoard(levelBoardData.width, levelBoardData.height);
-        CreateClueBadge();
+    // private void Start()
+    // {
+    //     cellList = new Cell[levelBoardData.width, levelBoardData.height];        
+    //     CreateBoard(levelBoardData.width, levelBoardData.height);
+    //     CreateClueBadge();
 
 
-    }
+    // }
     private void Update()
     {
         // if (Input.GetKeyDown(KeyCode.Space))
@@ -43,12 +43,19 @@ public class Board : MonoBehaviour
         }
     }
 
-    public void CreateBoard(int width, int height)
+    public void CreateBoard(int w, int h)
     {
-        Vector3 startPos = new Vector3(-(width-1)/2f, (height-1)/2f, 0);
-        for (int x = 0; x < width; x++)
+
+        ClearBoard();
+
+        width  = w;
+        height = h;
+        cellList = new Cell[w, h];
+
+        Vector3 startPos = new Vector3(-(w-1)/2f, (h-1)/2f, 0);
+        for (int x = 0; x < w; x++)
         {
-            for (int y = 0; y < height; y++)
+            for (int y = 0; y < h; y++)
             {
                 var cell = Instantiate(Cell, startPos + new Vector3(x, -y, 0), Quaternion.identity);
                 cell.transform.SetParent(this.transform);
@@ -62,6 +69,19 @@ public class Board : MonoBehaviour
 
     public void CreateClueBadge()
     {
+
+        List<GameObject> toDestroy = new List<GameObject>();
+        foreach (Transform child in transform)
+        {
+            if (child.GetComponent<Cell>() == null)
+                toDestroy.Add(child.gameObject);
+        }
+        foreach (var go in toDestroy) Destroy(go);
+ 
+        int w = levelBoardData.width;
+        int h = levelBoardData.height;
+
+
         Vector3 startPosUp = new Vector3(-(width-1)/2f, (height-1)/2f+1, 0);
         Vector3 startPosLeft = new Vector3(-(width-1)/2f-1, (height-1)/2f, 0);
         for (int x = 0; x < width; x++)
@@ -108,6 +128,15 @@ public class Board : MonoBehaviour
             }
         }
         return countCheck;
+    }
+
+    private void ClearBoard()
+    {
+        foreach (Transform child in transform)
+        {
+            Destroy(child.gameObject);
+        }
+        cellList = null;
     }
     // public int GetClues(TileType[] line)
     // {
