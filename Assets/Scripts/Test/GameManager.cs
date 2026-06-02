@@ -12,7 +12,7 @@ using UnityEngine;
 public class GameManagerTest : MonoBehaviour
 {
     [Header("UI Panels")]
-    [SerializeField] private GameObject gamePanel;      // Panel bọc toàn bộ màn chơi
+    // [SerializeField] private GameObject gamePanel;      // Panel bọc toàn bộ màn chơi
 
     [Header("Game Components")]
     [SerializeField] private Board board;               // Board.cs — chịu trách nhiệm tạo lưới ô
@@ -25,8 +25,8 @@ public class GameManagerTest : MonoBehaviour
     private void Start()
     {
         // Panel game ẩn mặc định; chỉ hiện khi StartLevel được gọi
-        if (gamePanel != null)
-            gamePanel.SetActive(false);
+        // if (gamePanel != null)
+        //     gamePanel.SetActive(false);
     }
 
     // ── Được LevelSelectManager gọi ──────────────────────────────
@@ -43,8 +43,8 @@ public class GameManagerTest : MonoBehaviour
         }
 
         // 1. Hiển thị panel game
-        if (gamePanel != null)
-            gamePanel.SetActive(true);
+        // if (gamePanel != null)
+        //     gamePanel.SetActive(true);
 
         // 2. Truyền data vào Board rồi build lưới
         board.levelBoardData = levelData; // levelBoardData phải được đổi thành [SerializeField] public hoặc setter
@@ -61,8 +61,8 @@ public class GameManagerTest : MonoBehaviour
     // ── Nút Back/Thoát game ───────────────────────────────────────
     public void OnExitGameButtonClicked()
     {
-        if (gamePanel != null)
-            gamePanel.SetActive(false);
+        // if (gamePanel != null)
+        //     gamePanel.SetActive(false);
 
         mainMenu.ShowMainMenu();
     }
